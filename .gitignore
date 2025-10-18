@@ -17,6 +17,7 @@ dist/
 .env.development.local
 .env.test.local
 .env.production.local
+.env
 
 # Turborepo
 .turbo/
@@ -33,6 +34,7 @@ dist/
 web-build/
 
 # Go
+bin/
 *.exe
 *.exe~
 *.dll
@@ -41,6 +43,7 @@ web-build/
 *.test
 *.out
 go.work
+server
 
 # IDE
 .vscode/
