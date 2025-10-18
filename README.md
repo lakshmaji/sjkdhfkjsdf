@@ -186,11 +186,19 @@ export const AUTH0_CLIENT_ID = 'your-client-id';
 
 ## Contributing
 
+We use [Changesets](https://github.com/changesets/changesets) for managing changelog and versioning.
+
+**Quick Start for Contributors:**
+
 1. Fork the repository
 2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+3. Make your changes
+4. Create a changeset: `npm run changeset`
+5. Commit your changes along with the changeset file
+6. Push to the branch (`git push origin feature/amazing-feature`)
+7. Open a Pull Request
+
+For detailed contribution guidelines, see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## License
 
