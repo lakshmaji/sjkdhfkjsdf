@@ -20,6 +20,33 @@ type User struct {
 	Email    string `json:"email"`
 	Name     string `json:"name"`
 	Auth0Sub string `json:"auth0_sub"`
+	Profile  *UserProfile `json:"profile,omitempty"`
+}
+
+type UserProfile struct {
+	DarkMode         bool   `json:"dark_mode"`
+	SoundEnabled     bool   `json:"sound_enabled"`
+	DefaultTemplate  string `json:"default_template"`
+}
+
+type TimerTemplate struct {
+	ID              string `json:"id"`
+	Name            string `json:"name"`
+	Duration        int64  `json:"duration"`
+	Direction       string `json:"direction"`
+	BackgroundColor string `json:"background_color"`
+	TextColor       string `json:"text_color"`
+	FontSize        int    `json:"font_size"`
+	IsBuiltIn       bool   `json:"is_built_in"`
+}
+
+type TimerHistoryEntry struct {
+	ID              string `json:"id"`
+	TimerName       string `json:"timer_name"`
+	Duration        int64  `json:"duration"`
+	CompletedAt     int64  `json:"completed_at"`
+	UserID          string `json:"user_id"`
+	RoomID          string `json:"room_id"`
 }
 
 type Room struct {
@@ -28,6 +55,7 @@ type Room struct {
 	CreatedBy   string           `json:"created_by"`
 	Users       map[string]*User `json:"users"`
 	Timers      map[string]*Timer `json:"timers"`
+	InviteCode  string           `json:"invite_code"`
 	mu          sync.RWMutex
 }
 
@@ -53,9 +81,15 @@ type WSMessage struct {
 
 // Global state
 var (
-	rooms     = make(map[string]*Room)
-	roomsMu   sync.RWMutex
-	upgrader  = websocket.Upgrader{
+	rooms          = make(map[string]*Room)
+	roomsMu        sync.RWMutex
+	templates      = make(map[string]*TimerTemplate)
+	templatesMu    sync.RWMutex
+	userProfiles   = make(map[string]*UserProfile)
+	profilesMu     sync.RWMutex
+	timerHistory   = make(map[string][]*TimerHistoryEntry) // key: userID
+	historyMu      sync.RWMutex
+	upgrader       = websocket.Upgrader{
 		CheckOrigin: func(r *http.Request) bool {
 			return true // Allow all origins for development
 		},
@@ -74,6 +108,9 @@ func main() {
 	// Load environment variables
 	godotenv.Load()
 
+	// Initialize built-in timer templates
+	initBuiltInTemplates()
+
 	router := mux.NewRouter()
 
 	// REST API endpoints
@@ -82,6 +119,18 @@ func main() {
 	router.HandleFunc("/api/rooms", listRoomsHandler).Methods("GET")
 	router.HandleFunc("/api/rooms/{roomId}", getRoomHandler).Methods("GET")
 	router.HandleFunc("/api/rooms/{roomId}/join", joinRoomHandler).Methods("POST")
+	router.HandleFunc("/api/rooms/invite/{inviteCode}", joinRoomByInviteHandler).Methods("POST")
+	
+	// Timer template endpoints
+	router.HandleFunc("/api/templates", getTemplatesHandler).Methods("GET")
+	
+	// User profile endpoints
+	router.HandleFunc("/api/users/{userId}/profile", getUserProfileHandler).Methods("GET")
+	router.HandleFunc("/api/users/{userId}/profile", updateUserProfileHandler).Methods("PUT")
+	
+	// Timer history endpoints
+	router.HandleFunc("/api/users/{userId}/history", getTimerHistoryHandler).Methods("GET")
+	router.HandleFunc("/api/users/{userId}/history", addTimerHistoryHandler).Methods("POST")
 
 	// WebSocket endpoint
 	router.HandleFunc("/ws", wsHandler)
@@ -126,12 +175,14 @@ func createRoomHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	roomID := generateID()
+	inviteCode := generateInviteCode()
 	room := &Room{
-		ID:        roomID,
-		Name:      req.Name,
-		CreatedBy: req.UserID,
-		Users:     make(map[string]*User),
-		Timers:    make(map[string]*Timer),
+		ID:         roomID,
+		Name:       req.Name,
+		CreatedBy:  req.UserID,
+		InviteCode: inviteCode,
+		Users:      make(map[string]*User),
+		Timers:     make(map[string]*Timer),
 	}
 
 	room.Users[req.UserID] = &User{
@@ -146,6 +197,15 @@ func createRoomHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(room)
+}
+
+func generateInviteCode() string {
+	const letters = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789" // Exclude confusing characters
+	b := make([]byte, 6)
+	for i := range b {
+		b[i] = letters[time.Now().UnixNano()%int64(len(letters))]
+	}
+	return string(b)
 }
 
 func listRoomsHandler(w http.ResponseWriter, r *http.Request) {
@@ -449,4 +509,190 @@ func randomString(n int) string {
 		b[i] = letters[time.Now().UnixNano()%int64(len(letters))]
 	}
 	return string(b)
+}
+
+func initBuiltInTemplates() {
+	builtInTemplates := []TimerTemplate{
+		{
+			ID:              "pomodoro",
+			Name:            "Pomodoro",
+			Duration:        1500, // 25 minutes
+			Direction:       "backward",
+			BackgroundColor: "#ef4444",
+			TextColor:       "#ffffff",
+			FontSize:        48,
+			IsBuiltIn:       true,
+		},
+		{
+			ID:              "short-break",
+			Name:            "Short Break",
+			Duration:        300, // 5 minutes
+			Direction:       "backward",
+			BackgroundColor: "#10b981",
+			TextColor:       "#ffffff",
+			FontSize:        48,
+			IsBuiltIn:       true,
+		},
+		{
+			ID:              "long-break",
+			Name:            "Long Break",
+			Duration:        900, // 15 minutes
+			Direction:       "backward",
+			BackgroundColor: "#3b82f6",
+			TextColor:       "#ffffff",
+			FontSize:        48,
+			IsBuiltIn:       true,
+		},
+		{
+			ID:              "stopwatch",
+			Name:            "Stopwatch",
+			Duration:        0,
+			Direction:       "forward",
+			BackgroundColor: "#8b5cf6",
+			TextColor:       "#ffffff",
+			FontSize:        48,
+			IsBuiltIn:       true,
+		},
+	}
+
+	templatesMu.Lock()
+	defer templatesMu.Unlock()
+	for _, tmpl := range builtInTemplates {
+		templates[tmpl.ID] = &tmpl
+	}
+}
+
+func getTemplatesHandler(w http.ResponseWriter, r *http.Request) {
+	templatesMu.RLock()
+	defer templatesMu.RUnlock()
+
+	templateList := make([]*TimerTemplate, 0, len(templates))
+	for _, tmpl := range templates {
+		templateList = append(templateList, tmpl)
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(templateList)
+}
+
+func getUserProfileHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	userID := vars["userId"]
+
+	profilesMu.RLock()
+	profile, exists := userProfiles[userID]
+	profilesMu.RUnlock()
+
+	if !exists {
+		// Return default profile
+		profile = &UserProfile{
+			DarkMode:     false,
+			SoundEnabled: true,
+			DefaultTemplate: "pomodoro",
+		}
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(profile)
+}
+
+func updateUserProfileHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	userID := vars["userId"]
+
+	var profile UserProfile
+	if err := json.NewDecoder(r.Body).Decode(&profile); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	profilesMu.Lock()
+	userProfiles[userID] = &profile
+	profilesMu.Unlock()
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(profile)
+}
+
+func getTimerHistoryHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	userID := vars["userId"]
+
+	historyMu.RLock()
+	history, exists := timerHistory[userID]
+	historyMu.RUnlock()
+
+	if !exists {
+		history = []*TimerHistoryEntry{}
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(history)
+}
+
+func addTimerHistoryHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	userID := vars["userId"]
+
+	var entry TimerHistoryEntry
+	if err := json.NewDecoder(r.Body).Decode(&entry); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	entry.ID = generateID()
+	entry.UserID = userID
+	entry.CompletedAt = time.Now().Unix()
+
+	historyMu.Lock()
+	if timerHistory[userID] == nil {
+		timerHistory[userID] = []*TimerHistoryEntry{}
+	}
+	timerHistory[userID] = append(timerHistory[userID], &entry)
+	historyMu.Unlock()
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(entry)
+}
+
+func joinRoomByInviteHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	inviteCode := vars["inviteCode"]
+
+	var req struct {
+		UserID    string `json:"user_id"`
+		UserEmail string `json:"user_email"`
+		UserName  string `json:"user_name"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	// Find room by invite code
+	roomsMu.Lock()
+	var foundRoom *Room
+	for _, room := range rooms {
+		if room.InviteCode == inviteCode {
+			foundRoom = room
+			break
+		}
+	}
+
+	if foundRoom == nil {
+		roomsMu.Unlock()
+		http.Error(w, "Invalid invite code", http.StatusNotFound)
+		return
+	}
+
+	foundRoom.Users[req.UserID] = &User{
+		ID:    req.UserID,
+		Email: req.UserEmail,
+		Name:  req.UserName,
+	}
+	roomsMu.Unlock()
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(foundRoom)
 }

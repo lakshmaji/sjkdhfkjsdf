@@ -1,7 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { Audio } from 'expo-av';
 import { Timer } from '../types';
 import { wsService } from '../services/WebSocketService';
+import { useTheme } from '../contexts/ThemeContext';
+import { useAuth } from '../contexts/AuthContext';
+import { apiService } from '../services/ApiService';
 
 interface TimerCardProps {
   timer: Timer;
@@ -13,6 +17,9 @@ interface TimerCardProps {
 export default function TimerCard({ timer, roomId, onSettings, onConfetti }: TimerCardProps) {
   const [localTime, setLocalTime] = useState(timer.elapsed_time);
   const [isRunning, setIsRunning] = useState(timer.is_running);
+  const { soundEnabled } = useTheme();
+  const { user } = useAuth();
+  const [sound, setSound] = useState<Audio.Sound | null>(null);
 
   useEffect(() => {
     setLocalTime(timer.elapsed_time);
@@ -39,6 +46,8 @@ export default function TimerCard({ timer, roomId, onSettings, onConfetti }: Tim
           if (timer.direction === 'backward' && newTime <= 0) {
             handlePause();
             onConfetti();
+            playCompletionSound();
+            saveToHistory(timer.duration);
             return 0;
           }
 
@@ -51,6 +60,42 @@ export default function TimerCard({ timer, roomId, onSettings, onConfetti }: Tim
       if (interval) clearInterval(interval);
     };
   }, [isRunning, timer.direction]);
+
+  useEffect(() => {
+    return () => {
+      if (sound) {
+        sound.unloadAsync();
+      }
+    };
+  }, [sound]);
+
+  const playCompletionSound = async () => {
+    if (!soundEnabled) return;
+
+    try {
+      const { sound: newSound } = await Audio.Sound.createAsync(
+        { uri: 'https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3' },
+        { shouldPlay: true }
+      );
+      setSound(newSound);
+    } catch (error) {
+      console.error('Error playing sound:', error);
+    }
+  };
+
+  const saveToHistory = async (duration: number) => {
+    try {
+      if (user?.sub) {
+        await apiService.addTimerHistory(user.sub, {
+          timer_name: timer.name,
+          duration: duration,
+          room_id: roomId,
+        });
+      }
+    } catch (error) {
+      console.error('Error saving to history:', error);
+    }
+  };
 
   const formatTime = (seconds: number) => {
     const hrs = Math.floor(Math.abs(seconds) / 3600);
