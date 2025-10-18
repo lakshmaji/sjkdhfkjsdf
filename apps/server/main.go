@@ -60,16 +60,16 @@ type Room struct {
 }
 
 type Timer struct {
-	ID             string  `json:"id"`
-	Name           string  `json:"name"`
-	Duration       int64   `json:"duration"`        // in seconds
-	ElapsedTime    int64   `json:"elapsed_time"`    // in seconds
-	IsRunning      bool    `json:"is_running"`
-	Direction      string  `json:"direction"`       // "forward" or "backward"
-	CreatedAt      int64   `json:"created_at"`
+	ID              string `json:"id"`
+	Name            string `json:"name"`
+	Duration        int64  `json:"duration"`     // in seconds
+	ElapsedTime     int64  `json:"elapsed_time"` // in seconds
+	IsRunning       bool   `json:"is_running"`
+	Direction       string `json:"direction"` // "forward" or "backward"
+	CreatedAt       int64  `json:"created_at"`
 	BackgroundColor string `json:"background_color"`
-	TextColor      string  `json:"text_color"`
-	FontSize       int     `json:"font_size"`
+	TextColor       string `json:"text_color"`
+	FontSize        int    `json:"font_size"`
 }
 
 type WSMessage struct {
