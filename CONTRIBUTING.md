@@ -94,6 +94,59 @@ timer-app-monorepo/
 - Keep components small and focused
 - Add proper TypeScript types
 
+## Changelog Management with Changesets
+
+This project uses [Changesets](https://github.com/changesets/changesets) to manage changelogs and versioning.
+
+### Creating a Changeset
+
+When you make changes that should be included in the changelog (features, fixes, breaking changes), create a changeset:
+
+```bash
+npm run changeset
+```
+
+This will prompt you to:
+1. Select which packages have changed (server, mobile, or both)
+2. Choose the type of change (major, minor, or patch)
+3. Write a summary of the changes
+
+The changeset will be saved as a markdown file in `.changeset/` directory and should be committed with your changes.
+
+### Changeset Types
+
+- **Major**: Breaking changes that require users to update their code
+- **Minor**: New features that are backward compatible
+- **Patch**: Bug fixes and small improvements
+
+### Example Workflow
+
+```bash
+# Make your code changes
+git checkout -b feature/new-timer-feature
+
+# Create a changeset
+npm run changeset
+# Follow the prompts to describe your changes
+
+# Commit both your code changes and the changeset
+git add .
+git commit -m "feat: add new timer feature"
+git push origin feature/new-timer-feature
+```
+
+### Versioning and Publishing
+
+Maintainers will use these commands to version and publish:
+
+```bash
+# Bump versions and update CHANGELOGs based on changesets
+npm run changeset:version
+
+# Publish packages (if applicable)
+npm run changeset:publish
+```
+
 ## Testing
 
 Currently, the project doesn't have automated tests. If you'd like to add testing:
