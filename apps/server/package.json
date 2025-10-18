@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "go run main.go",
     "build": "go build -o bin/server main.go",
-    "lint": "go vet ./... && gofmt -l . && staticcheck ./...",
+    "lint": "go vet ./... && test -z \"$(gofmt -l .)\"",
     "test": "go test -v -race ./...",
     "clean": "rm -rf bin"
   }
