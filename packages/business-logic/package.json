@@ -1,0 +1,14 @@
+{
+  "name": "@timer-app/business-logic",
+  "version": "1.0.0",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "scripts": {
+    "lint": "tsc --noEmit",
+    "build": "tsc"
+  },
+  "devDependencies": {
+    "typescript": "~5.9.2"
+  },
+  "private": true
+}

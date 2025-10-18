@@ -35,7 +35,7 @@ timer-app-monorepo/
 │   ├── server/          # Golang WebSocket server
 │   └── mobile/          # React Native mobile app
 ├── packages/
-│   └── types/           # Shared TypeScript types (future)
+│   └── business-logic/  # Shared business logic (API, WebSocket, Types)
 └── turbo.json           # Turborepo configuration
 ```
 
@@ -158,7 +158,13 @@ Then use:
 - `components/` - Reusable UI components
 - `screens/` - Screen components
 - `contexts/` - React contexts (Auth)
-- `services/` - API and WebSocket services
+- `services/` - API and WebSocket service instances
+
+**Business Logic (`packages/business-logic/`):**
+- `src/types.ts` - Shared TypeScript types
+- `src/ApiService.ts` - HTTP API client
+- `src/WebSocketService.ts` - WebSocket client
+- `src/index.ts` - Package exports
 
 ### Building
 
@@ -218,5 +224,6 @@ This project is licensed under the MIT License.
 
 ## Future Enhancements
 
-- [ ] Shared TypeScript types package
+- [x] Shared business logic package for mobile and web
+- [ ] Web application using the shared business logic
 - [ ] Mobile push notifications
