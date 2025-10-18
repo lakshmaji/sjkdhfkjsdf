@@ -7,12 +7,18 @@ A full-stack application for creating and managing collaborative timers with rea
 ### 🎯 Core Functionality
 - **Authentication**: Sign up and login using Auth0
 - **Room Management**: Create and join rooms for collaborative timer sessions
+- **Room Invitations**: Share 6-character invite codes to let others join rooms
 - **Multiple Timers**: Create unlimited timers per room (similar to stopwatch)
+- **Timer Templates**: Quick-start with built-in templates (Pomodoro, Short Break, Long Break, Stopwatch)
 - **Timer Controls**: 
   - Play and pause functionality
   - Forward and backward time adjustment (+/- 10 seconds)
   - Countdown and count-up modes
 - **Confetti Animation**: Celebration animation when countdown timers finish
+- **Sound Notifications**: Audio alerts when timers complete (toggleable)
+- **Timer History**: Tracks all completed timer sessions with timestamps
+- **User Profiles**: Manage preferences (dark mode, sound, default template)
+- **Dark Mode**: Full theme support with light and dark color schemes
 - **Customization**: 
   - 8 preset background colors
   - White or black text color options
@@ -95,6 +101,12 @@ Then use:
 - `GET /api/rooms` - List all rooms
 - `GET /api/rooms/{roomId}` - Get room details
 - `POST /api/rooms/{roomId}/join` - Join a room
+- `POST /api/rooms/invite/{inviteCode}` - Join room by invite code
+- `GET /api/templates` - Get timer templates
+- `GET /api/users/{userId}/profile` - Get user profile
+- `PUT /api/users/{userId}/profile` - Update user profile
+- `GET /api/users/{userId}/history` - Get timer history
+- `POST /api/users/{userId}/history` - Add timer history entry
 
 ### WebSocket Endpoint
 
@@ -199,10 +211,4 @@ This project is licensed under the MIT License.
 ## Future Enhancements
 
 - [ ] Shared TypeScript types package
-- [ ] Timer templates
-- [ ] Sound notifications
-- [ ] Dark mode
-- [ ] Timer history
-- [ ] User profiles
-- [ ] Room invitations via link
 - [ ] Mobile push notifications

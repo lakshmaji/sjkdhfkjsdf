@@ -451,3 +451,290 @@ The server returns standard HTTP status codes:
 - `500` - Internal server error
 
 For WebSocket errors, check the server logs.
+
+## New API Endpoints
+
+### Get Timer Templates
+
+```bash
+GET /api/templates
+```
+
+**Response:**
+```json
+[
+  {
+    "id": "pomodoro",
+    "name": "Pomodoro",
+    "duration": 1500,
+    "direction": "backward",
+    "background_color": "#ef4444",
+    "text_color": "#ffffff",
+    "font_size": 48,
+    "is_built_in": true
+  },
+  {
+    "id": "short-break",
+    "name": "Short Break",
+    "duration": 300,
+    "direction": "backward",
+    "background_color": "#10b981",
+    "text_color": "#ffffff",
+    "font_size": 48,
+    "is_built_in": true
+  },
+  {
+    "id": "long-break",
+    "name": "Long Break",
+    "duration": 900,
+    "direction": "backward",
+    "background_color": "#3b82f6",
+    "text_color": "#ffffff",
+    "font_size": 48,
+    "is_built_in": true
+  },
+  {
+    "id": "stopwatch",
+    "name": "Stopwatch",
+    "duration": 0,
+    "direction": "forward",
+    "background_color": "#8b5cf6",
+    "text_color": "#ffffff",
+    "font_size": 48,
+    "is_built_in": true
+  }
+]
+```
+
+### Join Room by Invite Code
+
+```bash
+POST /api/rooms/invite/{inviteCode}
+Content-Type: application/json
+
+{
+  "user_id": "auth0|789012",
+  "user_email": "friend@example.com",
+  "user_name": "Jane Smith"
+}
+```
+
+**Example:**
+```bash
+POST /api/rooms/invite/ABC123
+```
+
+**Response:**
+```json
+{
+  "id": "20251018180000abc123",
+  "name": "Study Room",
+  "created_by": "auth0|123456",
+  "users": {
+    "auth0|123456": {
+      "id": "auth0|123456",
+      "email": "user@example.com",
+      "name": "John Doe",
+      "auth0_sub": ""
+    },
+    "auth0|789012": {
+      "id": "auth0|789012",
+      "email": "friend@example.com",
+      "name": "Jane Smith",
+      "auth0_sub": ""
+    }
+  },
+  "timers": {},
+  "invite_code": "ABC123"
+}
+```
+
+### Get User Profile
+
+```bash
+GET /api/users/{userId}/profile
+```
+
+**Example:**
+```bash
+GET /api/users/auth0|123456/profile
+```
+
+**Response:**
+```json
+{
+  "dark_mode": false,
+  "sound_enabled": true,
+  "default_template": "pomodoro"
+}
+```
+
+**Note:** If profile doesn't exist, returns default values shown above.
+
+### Update User Profile
+
+```bash
+PUT /api/users/{userId}/profile
+Content-Type: application/json
+
+{
+  "dark_mode": true,
+  "sound_enabled": false,
+  "default_template": "short-break"
+}
+```
+
+**Example:**
+```bash
+PUT /api/users/auth0|123456/profile
+```
+
+**Response:**
+```json
+{
+  "dark_mode": true,
+  "sound_enabled": false,
+  "default_template": "short-break"
+}
+```
+
+### Get Timer History
+
+```bash
+GET /api/users/{userId}/history
+```
+
+**Example:**
+```bash
+GET /api/users/auth0|123456/history
+```
+
+**Response:**
+```json
+[
+  {
+    "id": "20251018180000hist01",
+    "timer_name": "Pomodoro Session",
+    "duration": 1500,
+    "completed_at": 1697654400,
+    "user_id": "auth0|123456",
+    "room_id": "20251018180000abc123"
+  },
+  {
+    "id": "20251018180500hist02",
+    "timer_name": "Short Break",
+    "duration": 300,
+    "completed_at": 1697658000,
+    "user_id": "auth0|123456",
+    "room_id": "20251018180000abc123"
+  }
+]
+```
+
+**Note:** Returns empty array `[]` if no history exists.
+
+### Add Timer History Entry
+
+```bash
+POST /api/users/{userId}/history
+Content-Type: application/json
+
+{
+  "timer_name": "Study Session",
+  "duration": 1800,
+  "room_id": "20251018180000abc123"
+}
+```
+
+**Example:**
+```bash
+POST /api/users/auth0|123456/history
+```
+
+**Response:**
+```json
+{
+  "id": "20251018181000hist03",
+  "timer_name": "Study Session",
+  "duration": 1800,
+  "completed_at": 1697661600,
+  "user_id": "auth0|123456",
+  "room_id": "20251018180000abc123"
+}
+```
+
+**Note:** The `id`, `completed_at`, and `user_id` fields are automatically generated.
+
+## Updated Room Structure
+
+Rooms now include an `invite_code` field:
+
+```json
+{
+  "id": "20251018180000abc123",
+  "name": "Study Room",
+  "created_by": "auth0|123456",
+  "users": { ... },
+  "timers": { ... },
+  "invite_code": "ABC123"
+}
+```
+
+The invite code is automatically generated when a room is created. It consists of 6 uppercase alphanumeric characters (excluding confusing characters like I, O, 0, 1).
+
+## Feature Integration Examples
+
+### Creating a Timer from Template
+
+1. Get available templates:
+```bash
+GET /api/templates
+```
+
+2. Create timer using template data via WebSocket:
+```json
+{
+  "type": "create_timer",
+  "room_id": "20251018180000abc123",
+  "payload": {
+    "name": "Pomodoro",
+    "duration": 1500,
+    "elapsed_time": 1500,
+    "is_running": false,
+    "direction": "backward",
+    "background_color": "#ef4444",
+    "text_color": "#ffffff",
+    "font_size": 48
+  }
+}
+```
+
+### User Workflow with All Features
+
+1. **Login**: User authenticates with Auth0
+2. **Load Profile**: `GET /api/users/{userId}/profile`
+3. **Create/Join Room**: Use invite code or create new room
+4. **Select Template**: `GET /api/templates` and choose one
+5. **Create Timer**: Send via WebSocket with template settings
+6. **Complete Timer**: When finished, automatically:
+   - Plays sound (if enabled in profile)
+   - Saves to history: `POST /api/users/{userId}/history`
+7. **View History**: `GET /api/users/{userId}/history`
+8. **Update Preferences**: `PUT /api/users/{userId}/profile`
+
+## Error Responses
+
+All new endpoints follow standard HTTP status codes:
+
+- `200 OK` - Success
+- `400 Bad Request` - Invalid input
+- `404 Not Found` - Resource doesn't exist
+- `500 Internal Server Error` - Server error
+
+Example error response:
+```
+HTTP/1.1 404 Not Found
+Content-Type: text/plain
+
+Invalid invite code
+```

@@ -1,5 +1,5 @@
 import { API_BASE_URL } from '../config';
-import { Room } from '../types';
+import { Room, TimerTemplate, UserProfile, TimerHistoryEntry } from '../types';
 
 export const apiService = {
   async createRoom(name: string, userId: string, userEmail: string, userName: string): Promise<Room> {
@@ -58,6 +58,88 @@ export const apiService = {
 
     if (!response.ok) {
       throw new Error('Failed to join room');
+    }
+
+    return response.json();
+  },
+
+  async joinRoomByInvite(inviteCode: string, userId: string, userEmail: string, userName: string): Promise<Room> {
+    const response = await fetch(`${API_BASE_URL}/api/rooms/invite/${inviteCode}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        user_id: userId,
+        user_email: userEmail,
+        user_name: userName,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to join room with invite code');
+    }
+
+    return response.json();
+  },
+
+  async getTemplates(): Promise<TimerTemplate[]> {
+    const response = await fetch(`${API_BASE_URL}/api/templates`);
+    
+    if (!response.ok) {
+      throw new Error('Failed to get templates');
+    }
+
+    return response.json();
+  },
+
+  async getUserProfile(userId: string): Promise<UserProfile> {
+    const response = await fetch(`${API_BASE_URL}/api/users/${userId}/profile`);
+    
+    if (!response.ok) {
+      throw new Error('Failed to get user profile');
+    }
+
+    return response.json();
+  },
+
+  async updateUserProfile(userId: string, profile: UserProfile): Promise<UserProfile> {
+    const response = await fetch(`${API_BASE_URL}/api/users/${userId}/profile`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(profile),
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to update user profile');
+    }
+
+    return response.json();
+  },
+
+  async getTimerHistory(userId: string): Promise<TimerHistoryEntry[]> {
+    const response = await fetch(`${API_BASE_URL}/api/users/${userId}/history`);
+    
+    if (!response.ok) {
+      throw new Error('Failed to get timer history');
+    }
+
+    return response.json();
+  },
+
+  async addTimerHistory(userId: string, entry: Omit<TimerHistoryEntry, 'id' | 'completed_at' | 'user_id'>): Promise<TimerHistoryEntry> {
+    const response = await fetch(`${API_BASE_URL}/api/users/${userId}/history`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(entry),
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to add timer history');
     }
 
     return response.json();

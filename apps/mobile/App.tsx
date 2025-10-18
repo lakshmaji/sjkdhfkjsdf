@@ -2,9 +2,11 @@ import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { ThemeProvider } from './contexts/ThemeContext';
 import LoginScreen from './screens/LoginScreen';
 import RoomListScreen from './screens/RoomListScreen';
 import RoomScreen from './screens/RoomScreen';
+import UserProfileScreen from './screens/UserProfileScreen';
 
 const Stack = createStackNavigator();
 
@@ -24,6 +26,7 @@ function AppNavigator() {
           <>
             <Stack.Screen name="RoomList" component={RoomListScreen} />
             <Stack.Screen name="Room" component={RoomScreen} />
+            <Stack.Screen name="UserProfile" component={UserProfileScreen} />
           </>
         )}
       </Stack.Navigator>
@@ -34,7 +37,9 @@ function AppNavigator() {
 export default function App() {
   return (
     <AuthProvider>
-      <AppNavigator />
+      <ThemeProvider>
+        <AppNavigator />
+      </ThemeProvider>
     </AuthProvider>
   );
 }

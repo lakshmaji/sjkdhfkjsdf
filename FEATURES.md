@@ -54,19 +54,58 @@
 - Animated confetti cannon with 200+ particles
 - Auto-fades after 3 seconds
 
-### 7. Real-time Synchronization
+### 7. Timer Templates
+- **4 Built-in Templates:**
+  - Pomodoro: 25-minute countdown
+  - Short Break: 5-minute countdown
+  - Long Break: 15-minute countdown
+  - Stopwatch: Count-up from 0
+- **Quick Creation** from template modal
+- **Consistent Styling** across templates
+
+### 8. Sound Notifications
+- **Audio Alerts** when countdown timers complete
+- **Toggleable** in user profile settings
+- **Non-intrusive** optional feature
+
+### 9. Dark Mode
+- **Full Theme Support** with light and dark color schemes
+- **Consistent Colors** across all screens and components
+- **User Preference** saved in profile
+- **Smooth Transitions** when toggling
+
+### 10. Timer History
+- **Automatic Tracking** of completed timers
+- **Detailed Records** including name, duration, and timestamp
+- **User-Specific** history storage
+- **Recent History View** in profile screen
+
+### 11. User Profiles
+- **Personal Information** display
+- **Settings Management** (dark mode, sound)
+- **Timer History** viewing
+- **Preference Persistence** across sessions
+
+### 12. Room Invitations
+- **6-Character Invite Codes** for each room
+- **Share via System** share sheet
+- **Copy to Clipboard** for easy sharing
+- **Direct Join** without browsing rooms
+
+### 13. Real-time Synchronization
 - **WebSocket Protocol** for instant updates
 - **Broadcast System** sends updates to all room users
 - **Auto-reconnect** with exponential backoff
 - **Tick Updates** every second during timer operation
 
-### 8. User Interface
+### 14. User Interface
 - **Clean, Modern Design** with rounded corners and shadows
 - **Responsive Layout** adapts to different screen sizes
 - **Modal Dialogs** for creating rooms and timers
 - **Settings Modal** for timer customization
 - **Touch Controls** optimized for mobile
 - **Visual Feedback** for all user actions
+- **Dark Mode Support** throughout the interface
 
 ## 📱 Mobile App Features
 
@@ -79,19 +118,32 @@
 2. **Room List Screen**
    - Display all available rooms
    - Create new room button
+   - Join by invite code button
    - Room cards showing user/timer counts
    - Pull to refresh
+   - Profile access button
    - Logout option
 
 3. **Room Screen**
    - Display all timers in the room
-   - Add timer button
+   - Create custom timer button
+   - Select from templates button
+   - Room invite code display
+   - Share/copy invite code
    - Individual timer cards
    - Back navigation
+
+4. **User Profile Screen**
+   - User information display
+   - Dark mode toggle
+   - Sound notifications toggle
+   - Timer history list
+   - Logout button
 
 ### Components
 - **Timer Card:** Individual timer display with controls
 - **Timer Settings Modal:** Full customization interface
+- **Timer Template Modal:** Template selection interface
 - **Confetti Cannon:** Celebration animation
 
 ## 🔧 Technical Features
@@ -138,6 +190,12 @@
 - `GET /api/rooms` - List rooms
 - `GET /api/rooms/{id}` - Get room details
 - `POST /api/rooms/{id}/join` - Join room
+- `POST /api/rooms/invite/{code}` - Join room by invite code
+- `GET /api/templates` - Get timer templates
+- `GET /api/users/{id}/profile` - Get user profile
+- `PUT /api/users/{id}/profile` - Update user profile
+- `GET /api/users/{id}/history` - Get timer history
+- `POST /api/users/{id}/history` - Add timer history entry
 
 ### WebSocket Messages
 - `join_room` - Join a room
@@ -218,24 +276,19 @@
 
 ## 📊 Statistics
 
-- **Lines of Code:** ~800 (Go) + ~2000 (TypeScript/React Native)
+- **Lines of Code:** ~1200 (Go) + ~3000 (TypeScript/React Native)
 - **Dependencies:** 
   - Backend: 5 Go packages
-  - Frontend: 8 npm packages
-- **API Endpoints:** 5 REST + 9 WebSocket message types
-- **Screens:** 3 main screens
-- **Components:** 5 reusable components
+  - Frontend: 9 npm packages
+- **API Endpoints:** 11 REST + 9 WebSocket message types
+- **Screens:** 4 main screens
+- **Components:** 6 reusable components
 - **Documentation:** 7 comprehensive guides
+- **Features:** 14 major feature categories
 
 ## 🔮 Future Enhancement Ideas
 
 - [ ] Shared TypeScript types package
-- [ ] Timer templates (Pomodoro, etc.)
-- [ ] Sound notifications
-- [ ] Dark mode theme
-- [ ] Timer history and analytics
-- [ ] User profiles with avatars
-- [ ] Room invitations via shareable links
 - [ ] Mobile push notifications
 - [ ] Timer categories/tags
 - [ ] Export timer sessions

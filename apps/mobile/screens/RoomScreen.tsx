@@ -8,14 +8,18 @@ import {
   Modal,
   TextInput,
   Alert,
+  Share,
+  Clipboard,
 } from 'react-native';
 import ConfettiCannon from 'react-native-confetti-cannon';
 import { useAuth } from '../contexts/AuthContext';
+import { useTheme } from '../contexts/ThemeContext';
 import { wsService } from '../services/WebSocketService';
 import { apiService } from '../services/ApiService';
-import { Timer, Room as RoomType } from '../types';
+import { Timer, Room as RoomType, TimerTemplate } from '../types';
 import TimerCard from '../components/TimerCard';
 import TimerSettingsModal from '../components/TimerSettingsModal';
+import TimerTemplateModal from '../components/TimerTemplateModal';
 import {
   DEFAULT_TIMER_DURATION,
   DEFAULT_BACKGROUND_COLOR,
@@ -26,8 +30,10 @@ import {
 export default function RoomScreen({ route, navigation }: any) {
   const { roomId } = route.params;
   const { user } = useAuth();
+  const { colors } = useTheme();
   const [room, setRoom] = useState<RoomType | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
+  const [templateModalVisible, setTemplateModalVisible] = useState(false);
   const [settingsModalVisible, setSettingsModalVisible] = useState(false);
   const [selectedTimer, setSelectedTimer] = useState<Timer | null>(null);
   const [newTimerName, setNewTimerName] = useState('');
@@ -129,6 +135,25 @@ export default function RoomScreen({ route, navigation }: any) {
     setNewTimerName('');
   };
 
+  const handleSelectTemplate = (template: TimerTemplate) => {
+    const timer: Partial<Timer> = {
+      name: template.name,
+      duration: template.duration,
+      elapsed_time: template.direction === 'backward' ? template.duration : 0,
+      is_running: false,
+      direction: template.direction,
+      background_color: template.background_color,
+      text_color: template.text_color,
+      font_size: template.font_size,
+    };
+
+    wsService.send({
+      type: 'create_timer',
+      room_id: roomId,
+      payload: JSON.stringify(timer),
+    });
+  };
+
   const handleTimerSettings = (timer: Timer) => {
     setSelectedTimer(timer);
     setSettingsModalVisible(true);
@@ -144,24 +169,65 @@ export default function RoomScreen({ route, navigation }: any) {
     setSettingsModalVisible(false);
   };
 
+  const handleShareInviteCode = async () => {
+    if (!room?.invite_code) return;
+
+    try {
+      await Share.share({
+        message: `Join my timer room with invite code: ${room.invite_code}`,
+      });
+    } catch (error) {
+      console.error('Error sharing invite code:', error);
+    }
+  };
+
+  const handleCopyInviteCode = () => {
+    if (!room?.invite_code) return;
+    Clipboard.setString(room.invite_code);
+    Alert.alert('Copied!', 'Invite code copied to clipboard');
+  };
+
   const timers = room?.timers ? Object.values(room.timers) : [];
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <View style={[styles.header, { backgroundColor: colors.card }]}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Text style={styles.backButtonText}>← Back</Text>
+          <Text style={[styles.backButtonText, { color: colors.primary }]}>← Back</Text>
         </TouchableOpacity>
-        <Text style={styles.title}>{room?.name || 'Loading...'}</Text>
+        <View style={styles.titleContainer}>
+          <Text style={[styles.title, { color: colors.text }]}>{room?.name || 'Loading...'}</Text>
+          {room?.invite_code && (
+            <View style={styles.inviteCodeContainer}>
+              <TouchableOpacity onPress={handleCopyInviteCode}>
+                <Text style={[styles.inviteCode, { color: colors.textSecondary }]}>
+                  Code: {room.invite_code}
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={handleShareInviteCode} style={styles.shareButton}>
+                <Text style={styles.shareIcon}>📤</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+        </View>
         <View style={styles.placeholder} />
       </View>
 
-      <TouchableOpacity
-        style={styles.createButton}
-        onPress={() => setModalVisible(true)}
-      >
-        <Text style={styles.createButtonText}>+ Add Timer</Text>
-      </TouchableOpacity>
+      <View style={styles.buttonRow}>
+        <TouchableOpacity
+          style={[styles.createButton, { backgroundColor: colors.success }]}
+          onPress={() => setModalVisible(true)}
+        >
+          <Text style={styles.createButtonText}>+ Custom Timer</Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity
+          style={[styles.templateButton, { backgroundColor: colors.primary }]}
+          onPress={() => setTemplateModalVisible(true)}
+        >
+          <Text style={styles.createButtonText}>📋 Templates</Text>
+        </TouchableOpacity>
+      </View>
 
       <FlatList
         data={timers}
@@ -176,7 +242,7 @@ export default function RoomScreen({ route, navigation }: any) {
         )}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>No timers yet. Create one!</Text>
+            <Text style={[styles.emptyText, { color: colors.textSecondary }]}>No timers yet. Create one!</Text>
           </View>
         }
       />
@@ -188,27 +254,28 @@ export default function RoomScreen({ route, navigation }: any) {
         onRequestClose={() => setModalVisible(false)}
       >
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Create Timer</Text>
+          <View style={[styles.modalContent, { backgroundColor: colors.card }]}>
+            <Text style={[styles.modalTitle, { color: colors.text }]}>Create Custom Timer</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, { borderColor: colors.border, color: colors.text }]}
               placeholder="Timer name"
+              placeholderTextColor={colors.textSecondary}
               value={newTimerName}
               onChangeText={setNewTimerName}
               autoFocus
             />
             <View style={styles.modalButtons}>
               <TouchableOpacity
-                style={[styles.modalButton, styles.cancelButton]}
+                style={[styles.modalButton, { backgroundColor: colors.border }]}
                 onPress={() => {
                   setModalVisible(false);
                   setNewTimerName('');
                 }}
               >
-                <Text style={styles.modalButtonText}>Cancel</Text>
+                <Text style={[styles.modalButtonText, { color: colors.text }]}>Cancel</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.modalButton, styles.confirmButton]}
+                style={[styles.modalButton, { backgroundColor: colors.success }]}
                 onPress={handleCreateTimer}
               >
                 <Text style={styles.modalButtonText}>Create</Text>
@@ -217,6 +284,12 @@ export default function RoomScreen({ route, navigation }: any) {
           </View>
         </View>
       </Modal>
+
+      <TimerTemplateModal
+        visible={templateModalVisible}
+        onClose={() => setTemplateModalVisible(false)}
+        onSelectTemplate={handleSelectTemplate}
+      />
 
       {selectedTimer && (
         <TimerSettingsModal
@@ -243,7 +316,6 @@ export default function RoomScreen({ route, navigation }: any) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
   },
   header: {
     flexDirection: 'row',
@@ -251,26 +323,52 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 20,
     paddingTop: 60,
-    backgroundColor: '#fff',
   },
   backButton: {
     padding: 8,
   },
   backButtonText: {
-    color: '#3b82f6',
     fontSize: 16,
+  },
+  titleContainer: {
+    alignItems: 'center',
+    flex: 1,
   },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#333',
+  },
+  inviteCodeContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 4,
+  },
+  inviteCode: {
+    fontSize: 12,
+  },
+  shareButton: {
+    marginLeft: 6,
+  },
+  shareIcon: {
+    fontSize: 14,
   },
   placeholder: {
     width: 60,
   },
+  buttonRow: {
+    flexDirection: 'row',
+    marginHorizontal: 20,
+    marginTop: 10,
+    gap: 10,
+  },
   createButton: {
-    backgroundColor: '#10b981',
-    margin: 20,
+    flex: 1,
+    padding: 15,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  templateButton: {
+    flex: 1,
     padding: 15,
     borderRadius: 8,
     alignItems: 'center',
@@ -287,7 +385,6 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 16,
-    color: '#999',
   },
   modalOverlay: {
     flex: 1,
@@ -296,7 +393,6 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
   modalContent: {
-    backgroundColor: '#fff',
     borderRadius: 12,
     padding: 20,
     width: '80%',
@@ -305,11 +401,9 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: '600',
     marginBottom: 20,
-    color: '#333',
   },
   input: {
     borderWidth: 1,
-    borderColor: '#ddd',
     borderRadius: 8,
     padding: 12,
     fontSize: 16,
