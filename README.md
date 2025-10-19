@@ -147,11 +147,11 @@ Web app runs on `http://localhost:3000`
 ## Tech Stack
 
 ### Backend
-- **Language**: Go 1.21+
+- **Language**: Go 1.23+
+- **Framework**: Echo v4 (high-performance HTTP framework)
+- **Architecture**: Hexagonal Architecture (Ports & Adapters)
 - **WebSocket**: gorilla/websocket
-- **Router**: gorilla/mux
 - **Auth**: Auth0 JWT middleware
-- **CORS**: rs/cors
 
 ### Mobile
 - **Framework**: React Native with Expo
