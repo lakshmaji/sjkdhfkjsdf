@@ -3,25 +3,43 @@
 ## System Overview
 
 ```
-┌─────────────────┐
-│  React Native   │
-│   Mobile App    │
-│   (Expo)        │
-└────────┬────────┘
-         │
-         │ HTTP REST API
-         │ WebSocket
-         │
-         ▼
-┌─────────────────┐
-│  Golang Server  │
-│                 │
-│  - REST API     │
-│  - WebSocket    │
-│  - Room Manager │
-│  - Timer Sync   │
-└─────────────────┘
+┌──────────────────┐         ┌──────────────────┐
+│  React Native    │         │    Next.js       │
+│   Mobile App     │         │    Web App       │
+│   (Expo)         │         │                  │
+└────────┬─────────┘         └─────────┬────────┘
+         │                             │
+         │  ┌──────────────────────┐  │
+         └──┤  Business Package    ├──┘
+            │  - API Service       │
+            │  - WebSocket Service │
+            │  - Shared Types      │
+            └──────────┬───────────┘
+                       │
+                       │ HTTP REST API
+                       │ WebSocket
+                       │
+                       ▼
+            ┌─────────────────┐
+            │  Golang Server  │
+            │                 │
+            │  - REST API     │
+            │  - WebSocket    │
+            │  - Room Manager │
+            │  - Timer Sync   │
+            └─────────────────┘
 ```
+
+The application now follows a clean architecture with:
+- **UI Layer**: Mobile (React Native) and Web (Next.js) apps
+- **Business Logic Layer**: Shared business package
+- **Backend Layer**: Golang server
+
+This separation ensures:
+- Code reusability between mobile and web
+- Single source of truth for business logic
+- Easy maintenance and testing
+- Clear separation of concerns
 
 ## Mobile App Architecture
 
@@ -96,6 +114,14 @@ Client A                  Server                     Client B
 
 ## Component Responsibilities
 
+### Business Package Components
+
+| Component | Responsibility |
+|-----------|---------------|
+| **ApiService** | REST API communication (used by both mobile and web) |
+| **WebSocketService** | WebSocket connection management (used by both mobile and web) |
+| **Types** | Shared TypeScript types and interfaces |
+
 ### Mobile App Components
 
 | Component | Responsibility |
@@ -107,8 +133,15 @@ Client A                  Server                     Client B
 | **RoomScreen** | Display timers in a room |
 | **TimerCard** | Individual timer display and controls |
 | **TimerSettingsModal** | Timer customization UI |
-| **WebSocketService** | WebSocket connection management |
-| **ApiService** | REST API communication |
+
+### Web App Components
+
+| Component | Responsibility |
+|-----------|---------------|
+| **page.tsx** | Home page displaying rooms |
+| **layout.tsx** | Root layout and metadata |
+| **apiService** | Instance of business package ApiService |
+| **wsService** | Instance of business package WebSocketService |
 
 ### Server Components
 
@@ -196,12 +229,23 @@ clients (Map)
 - **gorilla/mux**: HTTP router
 - **rs/cors**: CORS middleware
 
-### Frontend
+### Business Package
+- **TypeScript**: Type-safe business logic
+- **Fetch API**: HTTP client
+- **WebSocket API**: Real-time communication
+
+### Mobile Frontend
 - **React Native**: Mobile framework
 - **Expo**: Development platform
 - **TypeScript**: Type safety
 - **React Navigation**: Navigation library
 - **Auth0**: Authentication
+
+### Web Frontend
+- **Next.js 15**: React framework
+- **TypeScript**: Type safety
+- **Tailwind CSS**: Styling
+- **React 19**: UI library
 
 ### DevOps
 - **Turborepo**: Monorepo management
