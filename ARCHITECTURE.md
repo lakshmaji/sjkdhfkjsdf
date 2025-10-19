@@ -221,13 +221,98 @@ clients (Map)
 - `timer_backwarded` - Time skipped backward
 - `timer_deleted` - Timer removed
 
+## Hexagonal Architecture (Ports & Adapters)
+
+The Go server now follows hexagonal architecture (also known as ports and adapters) which provides:
+
+### Architecture Layers
+
+```
+┌─────────────────────────────────────────────────┐
+│              Adapters Layer                      │
+│  ┌──────────────┐        ┌──────────────┐      │
+│  │ HTTP Handler │        │   WebSocket  │      │
+│  │   (Echo)     │        │   Handler    │      │
+│  └──────┬───────┘        └──────┬───────┘      │
+│         │                       │               │
+│         └───────────┬───────────┘               │
+└─────────────────────┼───────────────────────────┘
+                      │
+┌─────────────────────┼───────────────────────────┐
+│         Application Layer (Use Cases)            │
+│  ┌──────────┐  ┌───────────┐  ┌──────────┐    │
+│  │   Room   │  │   Timer   │  │   User   │    │
+│  │ Service  │  │  Service  │  │ Service  │    │
+│  └────┬─────┘  └─────┬─────┘  └────┬─────┘    │
+│       │              │              │           │
+└───────┼──────────────┼──────────────┼───────────┘
+        │              │              │
+┌───────┼──────────────┼──────────────┼───────────┐
+│    Domain Layer (Business Logic & Ports)        │
+│  ┌────┴─────┐  ┌─────┴─────┐  ┌────┴─────┐    │
+│  │ Room     │  │  Timer    │  │  User    │    │
+│  │ Port     │  │  Port     │  │  Port    │    │
+│  └──────────┘  └───────────┘  └──────────┘    │
+└─────────────────────┬───────────────────────────┘
+                      │
+┌─────────────────────┼───────────────────────────┐
+│        Infrastructure Layer (Adapters)          │
+│  ┌──────────────────┴──────────────────┐       │
+│  │    In-Memory Repositories            │       │
+│  │  - RoomRepository                    │       │
+│  │  - TimerRepository                   │       │
+│  │  - TemplateRepository                │       │
+│  │  - UserProfileRepository             │       │
+│  │  - HistoryRepository                 │       │
+│  └──────────────────────────────────────┘       │
+└──────────────────────────────────────────────────┘
+```
+
+### Benefits of Hexagonal Architecture
+
+1. **Separation of Concerns**: Business logic is isolated from technical details
+2. **Testability**: Easy to test business logic independently
+3. **Flexibility**: Easy to swap implementations (e.g., move from in-memory to database)
+4. **Maintainability**: Clear boundaries between layers
+5. **Scalability**: Easy to add new features without affecting existing code
+
+### Directory Structure
+
+```
+apps/server/
+├── main.go                          # Application entry point
+├── internal/
+│   ├── domain/                      # Core business logic
+│   │   ├── entities.go              # Domain models
+│   │   └── ports.go                 # Repository interfaces (ports)
+│   ├── application/                 # Use cases / business operations
+│   │   ├── room_service.go
+│   │   ├── timer_service.go
+│   │   ├── template_service.go
+│   │   └── user_service.go
+│   ├── adapters/                    # External interfaces
+│   │   ├── http/                    # HTTP handlers (Echo)
+│   │   │   ├── room_handler.go
+│   │   │   ├── template_handler.go
+│   │   │   ├── user_handler.go
+│   │   │   └── health_handler.go
+│   │   └── websocket/               # WebSocket handler
+│   │       └── ws_handler.go
+│   └── infrastructure/              # External implementations
+│       ├── memory_room_repository.go
+│       ├── memory_timer_repository.go
+│       ├── memory_template_repository.go
+│       └── memory_user_repository.go
+└── go.mod
+```
+
 ## Technologies Used
 
 ### Backend
-- **Go 1.21+**: Server language
+- **Go 1.23+**: Server language
+- **Echo v4**: Modern, high-performance HTTP framework
 - **gorilla/websocket**: WebSocket implementation
-- **gorilla/mux**: HTTP router
-- **rs/cors**: CORS middleware
+- **godotenv**: Environment variable management
 
 ### Business Package
 - **TypeScript**: Type-safe business logic
