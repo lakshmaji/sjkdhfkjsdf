@@ -16,17 +16,17 @@ import (
 
 // Data structures
 type User struct {
-	ID       string `json:"id"`
-	Email    string `json:"email"`
-	Name     string `json:"name"`
-	Auth0Sub string `json:"auth0_sub"`
+	ID       string       `json:"id"`
+	Email    string       `json:"email"`
+	Name     string       `json:"name"`
+	Auth0Sub string       `json:"auth0_sub"`
 	Profile  *UserProfile `json:"profile,omitempty"`
 }
 
 type UserProfile struct {
-	DarkMode         bool   `json:"dark_mode"`
-	SoundEnabled     bool   `json:"sound_enabled"`
-	DefaultTemplate  string `json:"default_template"`
+	DarkMode        bool   `json:"dark_mode"`
+	SoundEnabled    bool   `json:"sound_enabled"`
+	DefaultTemplate string `json:"default_template"`
 }
 
 type TimerTemplate struct {
@@ -41,22 +41,22 @@ type TimerTemplate struct {
 }
 
 type TimerHistoryEntry struct {
-	ID              string `json:"id"`
-	TimerName       string `json:"timer_name"`
-	Duration        int64  `json:"duration"`
-	CompletedAt     int64  `json:"completed_at"`
-	UserID          string `json:"user_id"`
-	RoomID          string `json:"room_id"`
+	ID          string `json:"id"`
+	TimerName   string `json:"timer_name"`
+	Duration    int64  `json:"duration"`
+	CompletedAt int64  `json:"completed_at"`
+	UserID      string `json:"user_id"`
+	RoomID      string `json:"room_id"`
 }
 
 type Room struct {
-	ID          string           `json:"id"`
-	Name        string           `json:"name"`
-	CreatedBy   string           `json:"created_by"`
-	Users       map[string]*User `json:"users"`
-	Timers      map[string]*Timer `json:"timers"`
-	InviteCode  string           `json:"invite_code"`
-	mu          sync.RWMutex
+	ID         string            `json:"id"`
+	Name       string            `json:"name"`
+	CreatedBy  string            `json:"created_by"`
+	Users      map[string]*User  `json:"users"`
+	Timers     map[string]*Timer `json:"timers"`
+	InviteCode string            `json:"invite_code"`
+	mu         sync.RWMutex
 }
 
 type Timer struct {
@@ -81,15 +81,15 @@ type WSMessage struct {
 
 // Global state
 var (
-	rooms          = make(map[string]*Room)
-	roomsMu        sync.RWMutex
-	templates      = make(map[string]*TimerTemplate)
-	templatesMu    sync.RWMutex
-	userProfiles   = make(map[string]*UserProfile)
-	profilesMu     sync.RWMutex
-	timerHistory   = make(map[string][]*TimerHistoryEntry) // key: userID
-	historyMu      sync.RWMutex
-	upgrader       = websocket.Upgrader{
+	rooms        = make(map[string]*Room)
+	roomsMu      sync.RWMutex
+	templates    = make(map[string]*TimerTemplate)
+	templatesMu  sync.RWMutex
+	userProfiles = make(map[string]*UserProfile)
+	profilesMu   sync.RWMutex
+	timerHistory = make(map[string][]*TimerHistoryEntry) // key: userID
+	historyMu    sync.RWMutex
+	upgrader     = websocket.Upgrader{
 		CheckOrigin: func(r *http.Request) bool {
 			return true // Allow all origins for development
 		},
@@ -120,14 +120,14 @@ func main() {
 	router.HandleFunc("/api/rooms/{roomId}", getRoomHandler).Methods("GET")
 	router.HandleFunc("/api/rooms/{roomId}/join", joinRoomHandler).Methods("POST")
 	router.HandleFunc("/api/rooms/invite/{inviteCode}", joinRoomByInviteHandler).Methods("POST")
-	
+
 	// Timer template endpoints
 	router.HandleFunc("/api/templates", getTemplatesHandler).Methods("GET")
-	
+
 	// User profile endpoints
 	router.HandleFunc("/api/users/{userId}/profile", getUserProfileHandler).Methods("GET")
 	router.HandleFunc("/api/users/{userId}/profile", updateUserProfileHandler).Methods("PUT")
-	
+
 	// Timer history endpoints
 	router.HandleFunc("/api/users/{userId}/history", getTimerHistoryHandler).Methods("GET")
 	router.HandleFunc("/api/users/{userId}/history", addTimerHistoryHandler).Methods("POST")
@@ -586,8 +586,8 @@ func getUserProfileHandler(w http.ResponseWriter, r *http.Request) {
 	if !exists {
 		// Return default profile
 		profile = &UserProfile{
-			DarkMode:     false,
-			SoundEnabled: true,
+			DarkMode:        false,
+			SoundEnabled:    true,
 			DefaultTemplate: "pomodoro",
 		}
 	}

@@ -33,11 +33,24 @@ This project uses **Turborepo** to manage the monorepo structure:
 timer-app-monorepo/
 ├── apps/
 │   ├── server/          # Golang WebSocket server
-│   └── mobile/          # React Native mobile app
+│   ├── mobile/          # React Native mobile app
+│   └── web/             # Next.js web application
 ├── packages/
-│   └── types/           # Shared TypeScript types (future)
+│   └── business/        # Shared business logic and API services
 └── turbo.json           # Turborepo configuration
 ```
+
+### Business Package
+
+The `business` package contains all API calls and business logic, shared between mobile and web apps:
+- **API Service**: REST API client
+- **WebSocket Service**: Real-time communication
+- **Shared Types**: TypeScript interfaces
+
+This architecture ensures:
+- Mobile app focuses on UI and persistence
+- Web app focuses on UI and persistence
+- Business logic is centralized and reusable
 
 ## Getting Started
 
@@ -67,7 +80,7 @@ timer-app-monorepo/
 
 ### Running the Application
 
-#### Start both server and mobile app:
+#### Start all apps (server, mobile, and web):
 ```bash
 npm run dev
 ```
@@ -91,6 +104,13 @@ Then use:
 - Press `a` for Android
 - Press `i` for iOS (macOS only)
 - Press `w` for web
+
+**Web App:**
+```bash
+cd apps/web
+npm run dev
+```
+Web app runs on `http://localhost:3000`
 
 ## Server API
 
@@ -149,6 +169,12 @@ Then use:
 
 ### Project Structure
 
+**Business Package (`packages/business/`):**
+- `src/ApiService.ts` - REST API client
+- `src/WebSocketService.ts` - WebSocket client
+- `src/types.ts` - Shared TypeScript types
+- `src/index.ts` - Package exports
+
 **Server (`apps/server/`):**
 - `main.go` - Main server with WebSocket handlers and REST API
 - `go.mod` - Go dependencies
@@ -158,17 +184,24 @@ Then use:
 - `components/` - Reusable UI components
 - `screens/` - Screen components
 - `contexts/` - React contexts (Auth)
-- `services/` - API and WebSocket services
+- `services/` - Service instances from business package
+
+**Web (`apps/web/`):**
+- `src/app/page.tsx` - Home page
+- `src/services/` - Service instances from business package
+- `src/config.ts` - Configuration
 
 ### Building
 
 ```bash
-# Build all apps
+# Build all apps and packages
 npm run build
 
 # Build specific app
+cd packages/business && npm run build
 cd apps/server && go build
 cd apps/mobile && npm run build
+cd apps/web && npm run build
 ```
 
 ### Linting
@@ -196,6 +229,13 @@ export const AUTH0_DOMAIN = 'your-domain.auth0.com';
 export const AUTH0_CLIENT_ID = 'your-client-id';
 ```
 
+### Web Configuration (`apps/web/.env.local`)
+
+```env
+NEXT_PUBLIC_API_BASE_URL=http://localhost:8080
+NEXT_PUBLIC_WS_BASE_URL=ws://localhost:8080
+```
+
 ## Contributing
 
 We use [Changesets](https://github.com/changesets/changesets) for managing changelog and versioning.
@@ -218,5 +258,9 @@ This project is licensed under the MIT License.
 
 ## Future Enhancements
 
-- [ ] Shared TypeScript types package
+- [x] Shared business logic package
+- [x] Web application
 - [ ] Mobile push notifications
+- [ ] User authentication on web
+- [ ] Real-time updates on web
+- [ ] Persistent storage (database)
