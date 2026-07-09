@@ -1,0 +1,18 @@
+{
+  "expo": {
+    "name": "timer-app-monorepo",
+    "slug": "timer-app-monorepo",
+    "version": "1.0.0",
+    "sdkVersion": "54.0.0",
+    "platforms": [
+      "ios",
+      "android"
+    ],
+    "android": {
+      "package": "com.anonymous.timerappmonorepo"
+    },
+    "ios": {
+      "bundleIdentifier": "com.anonymous.timerappmonorepo"
+    }
+  }
+}
